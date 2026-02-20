@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Wardrobe Stylist 👕👖👟</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f4f9; }
+        section { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        form { margin-bottom: 30px; }
+        label { font-weight: bold; }
+        input, select, button { display: block; margin: 10px 0; padding: 8px; width: 100%; max-width: 300px; border-radius: 5px; border: 1px solid #ccc; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; transition: 0.3s; }
+        button:hover { background-color: #0056b3; }
+        img { max-width: 200px; height: auto; border-radius: 10px; border: 2px solid #ddd; background: #eee; }
+        #images { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px; justify-content: center; }
+        .item-container { text-align: center; }
+        #outfit-display { font-style: italic; color: #555; background: #e9ecef; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+<h1>AI Wardrobe Stylist 👕👖👟</h1>
+
+<section id="upload-section">
+    <h2>Upload Clothing Item 📸</h2>
+    <form id="image-form" enctype="multipart/form-data">
+        <label>Name: <input type="text" id="itemName" placeholder="e.g. Blue Denim" required></label>
+        <label>Type: 
+            <select id="category" required>
+                <option value="">Select</option>
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+                <option value="shoes">Shoes</option>
+            </select>
+        </label>
+        <label>Color: <input type="text" id="color" placeholder="e.g. Navy Blue" required></label>
+        <label>Select Image: <input type="file" id="image" accept="image/*" required></label>
+        <button type="submit">Upload to Wardrobe</button>
+    </form>
+</section>
+
+<section>
+    <h2>Ask AI Stylist 🤖</h2>
+    <p>The AI will look at your actual photos to find the best match.</p>
+    <button onclick="generateOutfit()">Generate AI Outfit</button>
+</section>
+
+<section>
+    <h2>Suggested Outfit</h2>
+    <div id="outfit-display">
+        <p>No outfit generated yet. Click the button above!</p>
+    </div>
+    <div id="images">
+        <div class="item-container">
+            <p><strong>Top</strong></p>
+            <img id="topImg" src="" alt="Top">
+        </div>
+        <div class="item-container">
+            <p><strong>Bottom</strong></p>
+            <img id="bottomImg" src="" alt="Bottom">
+        </div>
+        <div class="item-container">
+            <p><strong>Shoes</strong></p>
+            <img id="shoesImg" src="" alt="Shoes">
+        </div>
+    </div>
+</section>
+
+<script>
+/* ================= SET DEFAULT USER ================= */
+if (!localStorage.getItem("userId")) localStorage.setItem("userId", 1);
+
+/* ================= UPLOAD LOGIC ================= */
+document.getElementById("image-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const userId = localStorage.getItem("userId");
+    const formData = new FormData();
+    formData.append("name", document.getElementById("itemName").value);
+    formData.append("category", document.getElementById("category").value);
+    formData.append("color", document.getElementById("color").value);
+    formData.append("user_id", userId);
+    formData.append("image", document.getElementById("image").files[0]);
+
+    try {
+        const response = await fetch("/upload", { method: "POST", body: formData });
+        const data = await response.json();
+        if (response.ok) {
+            alert("Item uploaded successfully!");
+            document.getElementById("image-form").reset();
+        } else {
+            alert(data.error || "Upload failed");
+        }
+    } catch (err) {
+        alert("Server error during upload.");
+    }
+});
+
+/* ================= AI GENERATE OUTFIT ================= */
+async function generateOutfit() {
+    const userId = localStorage.getItem("userId") || 1;
+    const display = document.getElementById("outfit-display");
+    
+    display.innerHTML = "🤖 AI Stylist is thinking...";
+
+    try {
+        const response = await fetch(`/generate-ai/${userId}`);
+        const data = await response.json();
+
+        if (response.ok) {
+            display.innerHTML = `<strong>✨ Tip:</strong> ${data.tip}`;
+            
+            // Ensure path is used correctly. 
+            // If image_path is "/uploads/file.jpg", it works because of our static middleware
+            document.getElementById("topImg").src = data.top.image_path;
+            document.getElementById("bottomImg").src = data.bottom.image_path;
+            document.getElementById("shoesImg").src = data.shoes.image_path;
+        } else {
+            display.innerHTML = `❌ ${data.error}`;
+        }
+    } catch (err) {
+        display.innerHTML = "❌ Server error. Check backend console.";
+    }
+}
+</script>
+
+</body>
+</html>
