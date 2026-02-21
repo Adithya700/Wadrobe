@@ -9,6 +9,19 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // Initialize Google Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// backend/db.js
+const mongoose = require("mongoose");
+
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/wadrobe";
+
+mongoose.connect(MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
+
+module.exports = mongoose;
 
 const app = express();
 app.use(cors());
